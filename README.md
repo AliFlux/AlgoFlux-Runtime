@@ -38,7 +38,7 @@ These classes are instantiable and are used for custom data-manipulation.
 - Easy to use
 - No prototyping of built-in classes.
 
-## Installation
+## Integration
 
 Just copy the [algoflux.runtime.min.js](algoflux.runtime.min.js) into your working path, and include this script to your `<head>` tag.
 
