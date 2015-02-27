@@ -47,7 +47,7 @@ Please find the complete API reference at the [AlgoFlux](http://docs.algoflux.co
 
 ##### Note
 
-> The runtime does not come with a UI for data display. To use to UI controls, please use the [AlgoFlux IDE](http://algoflux.com).
+> The runtime does not come with a UI for data display. For UI controls, please use the [AlgoFlux IDE](http://algoflux.com).
 
 ## Examples
 
@@ -62,7 +62,7 @@ Following examples can be viewed and executed online. They make use of the runti
 
 ## Contributing
 
-Please submit bug reports, suggestions and pull requests to the [GitHub issue tracker](https://github.com/AliFlux/AlgoFlux/issues).
+Please submit bug reports, suggestions and pull requests to the [GitHub issue tracker](https://github.com/AliFlux/AlgoFlux-Runtime/issues).
 We are looking forward to expand its functionality by adding more useful data-structures.
 
 ## License
