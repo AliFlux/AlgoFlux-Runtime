@@ -36,6 +36,7 @@ These classes are instantiable and are used for custom data-manipulation.
 - Object-oriented usage
 - Works on both browsers and servers
 - Easy to use
+- No prototyping of built-in classes.
 
 ## Installation
 
