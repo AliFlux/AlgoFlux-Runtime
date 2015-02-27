@@ -56,10 +56,7 @@ Following examples can be viewed and executed online. They make use of the runti
 
 - Breadth-first traversal (Using Graph).
 - A* path-finding (Using Maze).
-- K-Means clustering (Using Scatter plot).
 - Automated vaccum cleaner.
-- News classification algorithm.
-- Natural Language Processing.
 
 ## Contributing
 
