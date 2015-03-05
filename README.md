@@ -44,11 +44,12 @@ Just copy the [algoflux.runtime.min.js](algoflux.runtime.min.js) into your worki
 
 ## API Reference
 
-Please find the complete API reference at the [AlgoFlux](http://docs.algoflux.com/api/documentation) site.
+Please find the complete API reference at the [AlgoFlux](http://algoflux.com/api/index.html) site.
 
 ##### Note
 
 > The runtime does not come with a UI for data display.
+
 > For UI controls, please use the [AlgoFlux IDE](http://algoflux.com).
 
 ## Examples
