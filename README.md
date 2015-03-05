@@ -48,15 +48,16 @@ Please find the complete API reference at the [AlgoFlux](http://docs.algoflux.co
 
 ##### Note
 
-> The runtime does not come with a UI for data display. For UI controls, please use the [AlgoFlux IDE](http://algoflux.com).
+> The runtime does not come with a UI for data display.
+> For UI controls, please use the [AlgoFlux IDE](http://algoflux.com).
 
 ## Examples
 
 Following examples can be viewed and executed online. They make use of the runtime.
 
-- Breadth-first traversal (Using Graph).
-- A* path-finding (Using Maze).
-- Automated vaccum cleaner.
+- [Breadth-first traversal (Using Graph).](http://algoflux.com/algorithm/breadth-first-search)
+- [A* path-finding (Using Maze).](http://algoflux.com/algorithm/maze-pathfinding)
+- [Robotic vaccum cleaner algorithm.](http://algoflux.com/algorithm/robotic-vaccum-cleaner)
 
 ## Contributing
 
