@@ -16,7 +16,8 @@ AlgoFlux Runtime provides the following static modules:
 3. Object related functions ([ObjectH](http://docs.algoflux.com/api/module-ObjectH.html)).
 4. Array related functions ([ArrayH](http://docs.algoflux.com/api/module-ArrayH.html)).
 5. Colors manipulation ([ColorH](http://docs.algoflux.com/api/module-ColorH.html)).
-6. Miscellaneous helper functions ([Helpers](http://docs.algoflux.com/api/module-Helpers.html)).
+6. Digital image processing ([ImageProcessingH](http://docs.algoflux.com/api/module-ImageProcessingH.html)).
+7. Miscellaneous helper functions ([Helpers](http://docs.algoflux.com/api/module-Helpers.html)).
 
 ### Data-structure Classes
 
@@ -59,6 +60,7 @@ Following examples can be viewed and executed online. They make use of the runti
 - [Breadth-first traversal (Using Graph).](http://algoflux.com/algorithm/breadth-first-search)
 - [A* path-finding (Using Maze).](http://algoflux.com/algorithm/maze-pathfinding)
 - [Robotic vaccum cleaner algorithm.](http://algoflux.com/algorithm/robotic-vaccum-cleaner)
+- [Digital image processing demo.](http://algoflux.com/algorithm/digital-image-processing)
 
 ## Contributing
 

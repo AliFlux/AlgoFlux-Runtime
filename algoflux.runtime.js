@@ -361,7 +361,7 @@ var Graph = (function() {
 *
 * @class Maze
 * @constructor
-* @param [value] {Any} A binary matrix depicting maze walls. Or an object having three elements `matrix`:`Matrix`, `markers[...]`:`Maze.Marker`, `links[...]`:`Maze.Link` and `patches[...]`:`Maze.Patch`. Or another Maze object to clone from.
+* @param [value] {Any} A binary matrix depicting maze walls. Or an object having three elements `matrix`:`Matrix`, `markers[...]`:`Maze.Marker`, `links[...]`:`Maze.Link` and `overlays[...]`:`Object`. Or another Maze object to clone from.
 */
 var Maze = (function() {
 
@@ -512,7 +512,7 @@ var Maze = (function() {
 			this.matrix = data.matrix;
 			this.markers = data.markers;
 			this.links = data.links;
-			this.patches = data.patches;
+			this.overlays = data.overlays;
 			return;
 		}
 
@@ -521,7 +521,7 @@ var Maze = (function() {
 				"matrix": data,
 				"markers": [],
 				"links": [],
-				"patches": [],
+				"overlays": {},
 			};
 		}
 		
@@ -530,7 +530,7 @@ var Maze = (function() {
 		this.matrix = [[]];
 		this.markers = [];
 		this.links = [];
-		this.patches = [];
+		this.overlays = {};
 		if(data.hasOwnProperty("width") && data.hasOwnProperty("height")) {
 
 			if(data.hasOwnProperty("algo")) {
@@ -552,8 +552,8 @@ var Maze = (function() {
 			this.links = data.links;
 		}
 
-		if(data.hasOwnProperty("patches")) {
-			this.patches = data.patches;
+		if(data.hasOwnProperty("overlays")) {
+			this.overlays = data.overlays;
 		}
 
 		if(data.hasOwnProperty("markers")) {
@@ -630,6 +630,27 @@ var Maze = (function() {
 
 		var blank = MatrixH.make(width, height, value);
 		return blank;
+	}
+
+	/**
+	 * Add an overlay on the maze (a matrix of colors).
+	 * 
+	 * @method addOverlay
+	 * @memberof Maze
+	 * @param id {String} ID of the overlay.
+	 * @param color {Any} The value to fill-in.
+	 * @return {Matrix} Resultant matrix.
+	 */
+	Maze.prototype.addOverlay = function(id, color) {
+
+		var width = MatrixH.getTotalRows(this.matrix);
+		var height = MatrixH.getTotalColumns(this.matrix);
+
+		var matrix = MatrixH.make(width, height, color);
+
+		this.overlays[id] = matrix;
+
+		return matrix;
 	}
 
 	/**
@@ -958,13 +979,56 @@ var Maze = (function() {
 			clone.links[i] = this.links[i].clone();
 		}
 
-		for(var i in this.patches) {
-			clone.patches[i] = this.patches[i].clone();
+		for(var i in this.overlays) {
+			clone.overlays[i] = MatrixH.clone(this.overlays[i]);
 		}
 
 		return clone;
 	}
 
+	/**
+	 * Adds a path to the maze.
+	 * 
+	 * @method addPath
+	 * @memberof Maze
+	 * @param path {Array} An array of objects having `x` and `y` attributes.
+	 * @param [color='gray'] {String} Path color.
+	 * @return {Maze} Cloned maze
+	 */
+	Maze.prototype.addPath = function(path, color) {
+
+		if(color == undefined) {
+			color = "gray";
+		}
+
+		for(var i = 1; i < path.length; i++) {
+			var link = new Maze.Link({
+				"start": {
+					x: path[i-1].x,
+					y: path[i-1].y,
+				},
+				"end": {
+					x: path[i].x,
+					y: path[i].y,
+				},
+				"color": color,
+			});
+			this.links.push(link);
+		}
+	}
+
+	/**
+	 * Find a path between two points.
+	 * 
+	 * @method findPath
+	 * @memberof Maze
+	 * @param x1 {Number} `x` value of the starting point.
+	 * @param y1 {Number} `y` value of the starting point.
+	 * @param x2 {Number} `x` value of the ending point.
+	 * @param y2 {Number} `y` value of the ending point.
+	 * @param [diagonal=false] {boolean} Whether the path can be diagonal or not.
+	 * @return {Maze} Cloned maze
+	 */
 	Maze.prototype.findPath = function(x1, y1, x2, y2, diagonal) {
 
 		var endCondition;
@@ -1184,47 +1248,6 @@ var Maze = (function() {
 		return Link;
 	})();
 	Maze.Link = Link;
-
-	/**
-	* A data-structure for Maze patches. A patch is a colored box used to hilight something on a maze.
-	*
-	* Patch is an instantiable class. It can be defined like:
-	*
-	* @example
-	* // Patch creation
-	*
-	* var patch = new Maze.Patch();
-	*
-	* @class Maze.Patch
-	* @memberof Maze
-	* @constructor
-	* @param [value] {Any} Another Patch object to clone from.
-	*/
-	var Patch = (function () {
-		function Patch(data) {
-			data = $.extend(true, {}, data);
-			for(var i in data) {
-				this[i] = data[i];
-			}
-		}
-
-		/**
-		 * Creates a copy of a Patch.
-		 * 
-		 * @method clone
-		 * @memberof Maze.Patch
-		 * @return {Patch} Cloned link
-		 */
-		Patch.prototype.clone = function () {
-			var clone = new Patch();
-			clone.color = this.color;
-			clone.x = this.x;
-			clone.y = this.y;
-			return clone;
-		};
-		return Patch;
-	})();
-	Maze.Patch = Patch;
 
 	return Maze;
 
@@ -1909,6 +1932,218 @@ var ColorH;
 
 })(ColorH || (ColorH = {}));
 
+
+/**
+* Provides common functions for digital image processing.
+*
+* @exports ImageProcessingH
+*/
+var ImageProcessingH;
+(function (ImageProcessingH) {
+
+
+	/**
+	 * Make a canvas from the dimentions
+	 * 
+	 * @method ImageProcessingH:makeCanvas
+	 * @static
+	 * @param width {Number} Width of the canvas
+	 * @param height {Number} Height of the canvas
+	 * @return {Canvas} HTML canvas element
+	 */
+	ImageProcessingH.makeCanvas = function(width, height) {
+		var c = document.createElement('canvas');
+		c.width = width;
+		c.height = height;
+		return c;
+	}
+
+	/**
+	 * Get pixels data from an image
+	 * 
+	 * @method ImageProcessingH:getPixels
+	 * @static
+	 * @param image {HTMLImageElement} HTML image element
+	 * @return {Object} data containing array of image pixels
+	 */
+	ImageProcessingH.getPixels = function(img) {
+		var c = ImageProcessingH.makeCanvas(img.width, img.height);
+		var ctx = c.getContext('2d');
+		ctx.drawImage(img, 0, 0);
+		return ctx.getImageData(0,0,c.width,c.height);
+	}
+
+	/**
+	 * Makes an image element out of pixels data
+	 * 
+	 * @method ImageProcessingH:makeImage
+	 * @static
+	 * @param pixels {Array} Array of image pixels
+	 * @return {HTMLImageElement} HTML image element
+	 */
+	ImageProcessingH.makeImage = function(pixels) {
+		var c = ImageProcessingH.makeCanvas(pixels.width, pixels.height);
+		var ctx = c.getContext('2d');
+		ctx.putImageData(pixels, 0, 0);
+
+		var image = $("<img src='' />").get(0);
+		var pngUrl = c.toDataURL();
+		image.setAttribute("src", pngUrl);
+
+		return image;
+	}
+
+	/**
+	 * Creates blank image data out of dimentions
+	 * 
+	 * @method ImageProcessingH:createImageData
+	 * @static
+	 * @param width {Number} Width of the canvas
+	 * @param height {Number} Height of the canvas
+	 * @return {Object} data containing array of image pixels
+	 */
+	ImageProcessingH.createImageData = function(width, height) {
+		var tmpCanvas = document.createElement('canvas');
+		var tmpCtx = tmpCanvas.getContext('2d');
+		return tmpCtx.createImageData(width, height);
+	}
+
+	/**
+	 * Gets Base64 out of an image
+	 * 
+	 * @method ImageProcessingH:getBase64
+	 * @static
+	 * @param image {HTMLImageElement} HTML image element
+	 * @return {String} Base64 data
+	 */
+	ImageProcessingH.getBase64 = function(img, mime) {
+		var c = ImageProcessingH.makeCanvas(img.width, img.height);
+		var ctx = c.getContext('2d');
+		ctx.drawImage(img, 0, 0);
+		return c.toDataURL(mime);
+	}
+
+	/**
+	 * Convert image into greyscale
+	 * 
+	 * @method ImageProcessingH:grayscale
+	 * @static
+	 * @param pixels {Object} data containing array of image pixels
+	 * @return {Object} modified data
+	 */
+	ImageProcessingH.grayscale = function(pixels) {
+		var d = pixels.data;
+		for (var i = 0; i < d.length; i += 4) {
+			var r = d[i];
+			var g = d[i + 1];
+			var b = d[i + 2];
+			// CIE luminance for the RGB
+			// The human eye is bad at seeing red and blue, so we de-emphasize them.
+			var v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+			d[i] = d[i + 1] = d[i + 2] = v
+		}
+		return pixels;
+	};
+
+	/**
+	 * Brighten the image
+	 * 
+	 * @method ImageProcessingH:brighten
+	 * @static
+	 * @param pixels {Object} data containing array of image pixels
+	 * @param adjustment {Number} Numerical adjustment [0-255]
+	 * @return {Object} modified data
+	 */
+	ImageProcessingH.brighten = function(pixels, adjustment) {
+		var d = pixels.data;
+		for (var i = 0; i < d.length; i += 4) {
+			d[i] += adjustment;
+			d[i + 1] += adjustment;
+			d[i + 2] += adjustment;
+		}
+		return pixels;
+	};
+
+	/**
+	 * Apply threshold filter on the image
+	 * 
+	 * @method ImageProcessingH:threshold
+	 * @static
+	 * @param pixels {Object} data containing array of image pixels
+	 * @param adjustment {Number} Numerical threshold [0-255]
+	 * @return {Object} modified data
+	 */
+	ImageProcessingH.threshold = function(pixels, threshold) {
+		var d = pixels.data;
+		for (var i = 0; i < d.length; i += 4) {
+			var r = d[i];
+			var g = d[i + 1];
+			var b = d[i + 2];
+			var v = (0.2126 * r + 0.7152 * g + 0.0722 * b >= threshold) ? 255 : 0;
+			d[i] = d[i + 1] = d[i + 2] = v
+		}
+		return pixels;
+	};
+
+	/**
+	 * Apply the convolution filter on the image. Can be used for sharpness, blur and many other effects.
+	 * 
+	 * @method ImageProcessingH:convolute
+	 * @static
+	 * @param pixels {Object} data containing array of image pixels
+	 * @param weights {Matrix} Convolution matrix
+	 * @param opaque {Boolean} Image opacity preservation?
+	 * @return {Object} modified data
+	 */
+	ImageProcessingH.convolute = function(pixels, weights, opaque) {
+		var side = weights.length;
+		var halfSide = Math.floor(side / 2);
+		var src = pixels.data;
+		var sw = pixels.width;
+		var sh = pixels.height;
+		// pad output by the convolution matrix
+		var w = sw;
+		var h = sh;
+		var output = ImageProcessingH.createImageData(w, h);
+		var dst = output.data;
+		// go through the destination image pixels
+		var alphaFac = opaque ? 1 : 0;
+		for (var y = 0; y < h; y++) {
+			for (var x = 0; x < w; x++) {
+				var sy = y;
+				var sx = x;
+				var dstOff = (y * w + x) * 4;
+				// calculate the weighed sum of the source image pixels that
+				// fall under the convolution matrix
+				var r = 0,
+					g = 0,
+					b = 0,
+					a = 0;
+				for (var cy = 0; cy < side; cy++) {
+					for (var cx = 0; cx < side; cx++) {
+						var scy = sy + cy - halfSide;
+						var scx = sx + cx - halfSide;
+						if (scy >= 0 && scy < sh && scx >= 0 && scx < sw) {
+							var srcOff = (scy * sw + scx) * 4;
+							var wt = weights[cx][cy];
+							r += src[srcOff] * wt;
+							g += src[srcOff + 1] * wt;
+							b += src[srcOff + 2] * wt;
+							a += src[srcOff + 3] * wt;
+						}
+					}
+				}
+				dst[dstOff] = r;
+				dst[dstOff + 1] = g;
+				dst[dstOff + 2] = b;
+				dst[dstOff + 3] = a + alphaFac * (255 - a);
+			}
+		}
+		return output;
+	};
+
+})(ImageProcessingH || (ImageProcessingH = {}));
+
 /**
 * Provides common functions for mathematical operations on Matrices, Arrays, Objects and Numbers.
 *
@@ -1928,7 +2163,7 @@ var MathH;
 	 * @return {Any} Absolute value
 	 */
 	MathH.abs = function(obj) {
-		if(typeof obj == 'number') {
+		if(!isNaN(obj)) {
 			return Math.abs(obj);
 		}
 
@@ -1949,7 +2184,7 @@ var MathH;
 	 * @return {Any} Arc cosine value
 	 */
 	MathH.acos = function(obj) {
-		if(typeof obj == 'number') {
+		if(!isNaN(obj)) {
 			return Math.acos(obj);
 		}
 
@@ -1970,7 +2205,7 @@ var MathH;
 	 * @return {Any} Arc sin value
 	 */
 	MathH.asin = function(obj) {
-		if(typeof obj == 'number') {
+		if(!isNaN(obj)) {
 			return Math.asin(obj);
 		}
 
@@ -1991,7 +2226,7 @@ var MathH;
 	 * @return {Any} Arc tan value
 	 */
 	MathH.atan = function(obj) {
-		if(typeof obj == 'number') {
+		if(!isNaN(obj)) {
 			return Math.atan(obj);
 		}
 
@@ -2012,7 +2247,7 @@ var MathH;
 	 * @return {Any} Arc tan value
 	 */
 	MathH.atan2 = function(obj) {
-		if(typeof obj == 'number') {
+		if(!isNaN(obj)) {
 			return Math.atan2(obj);
 		}
 
@@ -2033,7 +2268,7 @@ var MathH;
 	 * @return {Any} Sine value
 	 */
 	MathH.sin = function(obj) {
-		if(typeof obj == 'number') {
+		if(!isNaN(obj)) {
 			return Math.sin(obj);
 		}
 
@@ -2054,7 +2289,7 @@ var MathH;
 	 * @return {Any} Cosine value
 	 */
 	MathH.cos = function(obj) {
-		if(typeof obj == 'number') {
+		if(!isNaN(obj)) {
 			return Math.cos(obj);
 		}
 
@@ -2075,7 +2310,7 @@ var MathH;
 	 * @return {Any} Tangent value
 	 */
 	MathH.tan = function(obj) {
-		if(typeof obj == 'number') {
+		if(!isNaN(obj)) {
 			return Math.tan(obj);
 		}
 
@@ -2096,7 +2331,7 @@ var MathH;
 	 * @return {Any} Radians value
 	 */
 	MathH.toRadians = function(obj) {
-		if(typeof obj == 'number') {
+		if(!isNaN(obj)) {
 			return obj * (Math.PI / 180);
 		}
 
@@ -2117,7 +2352,7 @@ var MathH;
 	 * @return {Any} Degrees value
 	 */
 	MathH.toDegrees = function(obj) {
-		if(typeof obj == 'number') {
+		if(!isNaN(obj)) {
 			return obj * (180 / Math.PI);
 		}
 
@@ -2138,7 +2373,7 @@ var MathH;
 	 * @return {Any} Ceiled value
 	 */
 	MathH.ceil = function(obj) {
-		if(typeof obj == 'number') {
+		if(!isNaN(obj)) {
 			return Math.ceil(obj);
 		}
 
@@ -2159,7 +2394,7 @@ var MathH;
 	 * @return {Any} Floored value
 	 */
 	MathH.floor = function(obj) {
-		if(typeof obj == 'number') {
+		if(!isNaN(obj)) {
 			return Math.floor(obj);
 		}
 
@@ -2184,7 +2419,32 @@ var MathH;
 		if(places === undefined) {
 			places = 0;
 		}
-		if(typeof obj == 'number') {
+		if(!isNaN(obj)) {
+			return +(Math.round(obj + "e+" + places)  + "e-"+places);
+		}
+
+		var obj2 = Helpers.clone(obj);
+		Helpers.each(obj2, function(val) {
+			val = Number(val);
+			return +(Math.round(val + "e+" + places)  + "e-"+places);
+		});
+		return obj2;
+	}
+
+	/**
+	 * Rounds a number
+	 * 
+	 * @method MathH:round
+	 * @static
+	 * @param value {Any} Number, Matrix, Array, or Object.
+	 * @param [places=0] {Number} Number of decimal places.
+	 * @return {Any} Rounded value
+	 */
+	MathH.round = function(obj, places) {
+		if(places === undefined) {
+			places = 0;
+		}
+		if(!isNaN(obj)) {
 			return +(Math.round(obj + "e+" + places)  + "e-"+places);
 		}
 
@@ -2205,7 +2465,7 @@ var MathH;
 	 * @return {Any} Log value
 	 */
 	MathH.log = function(obj) {
-		if(typeof obj == 'number') {
+		if(!isNaN(obj)) {
 			return Math.log(obj);
 		}
 
@@ -2226,7 +2486,7 @@ var MathH;
 	 * @return {Any} Exponent value
 	 */
 	MathH.exp = function(obj) {
-		if(typeof obj == 'number') {
+		if(!isNaN(obj)) {
 			return Math.exp(obj);
 		}
 
@@ -2247,7 +2507,8 @@ var MathH;
 	 * @return {Any} Square rooted value
 	 */
 	MathH.sqrt = function(obj) {
-		if(typeof obj == 'number') {
+
+		if(!isNaN(obj)) {
 			return Math.sqrt(obj);
 		}
 
@@ -2269,7 +2530,7 @@ var MathH;
 	 * @return {Any} Powered value
 	 */
 	MathH.pow = function(obj, y) {
-		if(typeof obj == 'number') {
+		if(!isNaN(obj)) {
 			return Math.pow(obj, y);
 		}
 
@@ -3419,7 +3680,7 @@ var MatrixH;
 	 * @static
 	 * @param matrix {Matrix} Input matrix.
 	 * @param value {Any} `Number`, `Function`, `Array` or `String`: `random` | `binary`.
-	 * @return {Matrix} Matrix with inserted column.
+	 * @return {Number} index of the new column.
 	 */
 	MatrixH.appendColumn = function(matrix, method) {
 
@@ -3430,6 +3691,8 @@ var MatrixH;
 		var totalCols = MatrixH.getTotalColumns(matrix);
 
 		MatrixH.fillColumn(matrix, totalCols - 1, method);
+
+		return totalCols - 1;
 	}
 
 	/**
@@ -3507,7 +3770,7 @@ var MatrixH;
 	 * @static
 	 * @param matrix {Matrix} Input matrix.
 	 * @param value {Any} `Number`, `Function`, `Array` or `String`: `random` | `binary`.
-	 * @return {Matrix} Matrix with inserted row.
+	 * @return {Number} Index of the newly appended row.
 	 */
 	MatrixH.appendRow = function(matrix, method) {
 
@@ -3515,6 +3778,8 @@ var MatrixH;
 		matrix.push(new Array(totalCols))
 
 		MatrixH.fillRow(matrix, matrix.length - 1, method);
+
+		return matrix.length - 1;
 	}
 
 	/**
@@ -3764,6 +4029,53 @@ var MatrixH;
 		}
 
 		return false;
+	}
+
+	/**
+	 * Sum of all rows in a matrix.
+	 * 
+	 * @method MatrixH:rowSum
+	 * @static
+	 * @param matrix {Matrix} The input matrix.
+	 * @return {Array} Resultant array.
+	 */
+	MatrixH.rowSum = function(matrix) {
+		var result = [];
+
+		for(var i = 0; i < matrix[0].length; i++) {
+
+			result[i] = 0;
+			for(var j = 0; j < matrix.length; j++) {
+				result[i] += Number(matrix[j][i]);
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Mean of all rows in a matrix.
+	 * 
+	 * @method MatrixH:rowMean
+	 * @static
+	 * @param matrix {Matrix} The input matrix.
+	 * @return {Array} Resultant array.
+	 */
+	MatrixH.rowMean = function(matrix) {
+		var result = [];
+
+		for(var i = 0; i < matrix[0].length; i++) {
+
+			result[i] = 0;
+			for(var j = 0; j < matrix.length; j++) {
+				result[i] += Number(matrix[j][i]);
+			}
+
+			result[i] = result[i]/matrix.length;
+		}
+
+
+		return result;
 	}
 
 	/**
